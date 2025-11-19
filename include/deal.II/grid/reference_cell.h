@@ -365,6 +365,13 @@ public:
   face_indices() const;
 
   /**
+   * Return an object that can be thought of as an array containing the indices
+   * of the givent cell's faces of the desired type @p face_ref_type.
+   */
+  std_cxx20::ranges::iota_view<unsigned int, unsigned int>
+  face_indices_by_type(ReferenceCell face_ref_type) const;
+
+  /**
    * Return the number of refinement directions of the cell.
    */
   unsigned int
@@ -1118,7 +1125,8 @@ public:
   /**
    * Conversion operator to an integer.
    */
-  constexpr operator std::uint8_t() const;
+  constexpr
+  operator std::uint8_t() const;
 
   /**
    * Operator for equality comparison.
@@ -1247,7 +1255,8 @@ inline constexpr ReferenceCell::ReferenceCell(const std::uint8_t kind)
 
 
 
-inline constexpr ReferenceCell::operator std::uint8_t() const
+inline constexpr ReferenceCell::
+operator std::uint8_t() const
 {
   return kind;
 }
@@ -1385,7 +1394,7 @@ template <class Archive>
 inline void
 ReferenceCell::serialize(Archive &archive, const unsigned int /*version*/)
 {
-  archive &kind;
+  archive & kind;
 }
 
 
@@ -2017,6 +2026,73 @@ ReferenceCell::face_indices() const
 
 
 
+inline std_cxx20::ranges::iota_view<unsigned int, unsigned int>
+ReferenceCell::face_indices_by_type(ReferenceCell face_ref_type) const
+{
+  switch (this->kind)
+    {
+      case ReferenceCells::Vertex:
+        return this->face_indices(); // no faces
+      case ReferenceCells::Line:
+        if (face_ref_type == ReferenceCells::Vertex)
+          return this->face_indices();
+        else
+          return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(0U,
+                                                                          0U);
+      case ReferenceCells::Triangle:
+      case ReferenceCells::Quadrilateral:
+        if (face_ref_type == ReferenceCells::Line)
+          return this->face_indices();
+        else
+          return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(0U,
+                                                                          0U);
+      case ReferenceCells::Tetrahedron:
+        if (face_ref_type == ReferenceCells::Triangle)
+          return this->face_indices();
+        else
+          return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(0U,
+                                                                          0U);
+      case ReferenceCells::Pyramid:
+        switch (face_ref_type)
+          {
+            case ReferenceCells::Triangle:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                1U, 5U);
+            case ReferenceCells::Quadrilateral:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                0U, 1U);
+            default:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                0U, 0U);
+          }
+      case ReferenceCells::Wedge:
+        switch (face_ref_type)
+          {
+            case ReferenceCells::Triangle:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                0U, 2U);
+            case ReferenceCells::Quadrilateral:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                2U, 5U);
+            default:
+              return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(
+                0U, 0U);
+          }
+      case ReferenceCells::Hexahedron:
+        if (face_ref_type == ReferenceCells::Quadrilateral)
+          return this->face_indices();
+        else
+          return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(0U,
+                                                                          0U);
+      default:
+        DEAL_II_NOT_IMPLEMENTED();
+    }
+
+  return std_cxx20::ranges::iota_view<unsigned int, unsigned int>(0U, 0U);
+}
+
+
+
 inline unsigned int
 ReferenceCell::n_isotropic_refinement_choices() const
 {
@@ -2089,6 +2165,7 @@ ReferenceCell::n_isotropic_children() const
       case ReferenceCells::Tetrahedron:
         return 8;
       case ReferenceCells::Pyramid:
+        // TODO: Find out how many cells we want to use.
         // We haven't yet decided how to refine pyramids. Update this when we
         // have
         return 0;
