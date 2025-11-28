@@ -1125,8 +1125,7 @@ public:
   /**
    * Conversion operator to an integer.
    */
-  constexpr
-  operator std::uint8_t() const;
+  constexpr operator std::uint8_t() const;
 
   /**
    * Operator for equality comparison.
@@ -1255,8 +1254,7 @@ inline constexpr ReferenceCell::ReferenceCell(const std::uint8_t kind)
 
 
 
-inline constexpr ReferenceCell::
-operator std::uint8_t() const
+inline constexpr ReferenceCell::operator std::uint8_t() const
 {
   return kind;
 }
@@ -1394,7 +1392,7 @@ template <class Archive>
 inline void
 ReferenceCell::serialize(Archive &archive, const unsigned int /*version*/)
 {
-  archive & kind;
+  archive &kind;
 }
 
 
