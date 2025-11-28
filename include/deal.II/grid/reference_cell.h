@@ -2027,6 +2027,8 @@ ReferenceCell::face_indices() const
 inline std_cxx20::ranges::iota_view<unsigned int, unsigned int>
 ReferenceCell::face_indices_by_type(ReferenceCell face_ref_type) const
 {
+  // Somewhat of a duplicate of internal::TriangulationImplementation::CellTypeX
+  // type_of_entity().
   switch (this->kind)
     {
       case ReferenceCells::Vertex:
