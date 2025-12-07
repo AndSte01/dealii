@@ -1720,15 +1720,15 @@ ReferenceCell::new_isotropic_child_cell_faces(
 
       case ReferenceCells::Wedge:
         {
-          constexpr dealii::ndarray<unsigned int, 8, 6> cell_quads_wedge = {{
-            {{23, 0, 10, 19, 5, X}}, // bottom children
-            {{22, 1, 11, 4, 14, X}}, //
-            {{24, 2, 6, 18, 15, X}}, //
-            {{25, 3, 4, 5, 6, X}},   //
-            {{0, 26, 12, 21, 8, X}}, // top children
-            {{1, 27, 13, 7, 16, X}}, //
-            {{2, 28, 9, 20, 17, X}}, //
-            {{3, 29, 7, 8, 9, X}}    //
+          dealii::ndarray<unsigned int, 8, 6> cell_quads_wedge = {{
+            {{23, 0, 10, 5, 19, X}}, // bottom children
+            {{22, 1, 11, 14, 4, X}}, //
+            {{24, 2, 6, 15, 18, X}}, //
+            {{25, 3, 4, 6, 5, X}},   //
+            {{0, 26, 12, 8, 21, X}}, // top children
+            {{1, 27, 13, 16, 7, X}}, //
+            {{2, 28, 9, 17, 20, X}}, //
+            {{3, 29, 7, 9, 8, X}}    //
           }};
           return cell_quads_wedge;
         }
@@ -1804,14 +1804,14 @@ ReferenceCell::new_isotropic_child_cell_vertices(
       case ReferenceCells::Wedge:
         {
           constexpr dealii::ndarray<unsigned int, 8, 8> cell_vertices_wedge = {{
-            {{6, 0, 8, 15, 12, 17, X, X}},   // bottom children
-            {{1, 6, 7, 13, 15, 16, X, X}},   //
-            {{7, 8, 2, 16, 17, 14, X, X}},   //
-            {{7, 6, 8, 16, 15, 17, X, X}},   //
-            {{15, 12, 17, 9, 3, 11, X, X}},  // top children
-            {{13, 15, 16, 4, 9, 10, X, X}},  //
-            {{16, 17, 14, 10, 11, 5, X, X}}, //
-            {{16, 15, 17, 10, 9, 11, X, X}}  //
+            {{0, 6, 8, 12, 15, 17, X, X}},   // bottom children
+            {{6, 1, 7, 15, 13, 16, X, X}},   //
+            {{8, 7, 2, 17, 16, 14, X, X}},   //
+            {{6, 7, 8, 15, 16, 17, X, X}},   //
+            {{12, 15, 17, 3, 9, 11, X, X}},  // top children
+            {{15, 13, 16, 9, 4, 10, X, X}},  //
+            {{17, 16, 14, 11, 10, 5, X, X}}, //
+            {{15, 16, 17, 9, 10, 11, X, X}}  //
           }};
           return cell_vertices_wedge;
         }

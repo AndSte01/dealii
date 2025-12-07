@@ -7257,11 +7257,19 @@ namespace internal
                             // orientation of the face.
                             static const std::array<std::array<unsigned int, 3>,
                                                     6>
-                              tri_vert_perm = {{{{0, 1, 2}}, // 0
+                              // This was the old implementation I think 2 and 4
+                              // got mixed up there
+                              // tri_line_perm = {{{{0, 1, 2}}, // 0
+                              //                   {{1, 0, 2}},
+                              //                   {{1, 2, 0}}, // 2
+                              //                   {{0, 2, 1}},
+                              //                   {{2, 0, 1}}, // 4
+                              //                   {{2, 1, 0}}}};
+                              tri_line_perm = {{{{0, 1, 2}}, // 0
                                                 {{1, 0, 2}},
-                                                {{1, 2, 0}}, // 2
+                                                {{2, 0, 1}}, // 2
                                                 {{0, 2, 1}},
-                                                {{2, 0, 1}}, // 4
+                                                {{1, 2, 0}}, // 4
                                                 {{2, 1, 0}}}};
 
                             const auto combined_orientation =
@@ -7269,7 +7277,7 @@ namespace internal
                             relevant_lines[relevant_lines_counter] =
                               cell->face(f)
                                 ->child(3 /*center triangle*/)
-                                ->line(tri_vert_perm[combined_orientation][l]);
+                                ->line(tri_line_perm[combined_orientation][l]);
                           }
                       }
 
@@ -7731,20 +7739,22 @@ namespace internal
                     // convention for the tetrahedron unit cell, see
                     // cell_vertices_tet below
                     // TODO: Put in reference cell
-                    // dealii::ndarray<unsigned int, 8, 6> cell_faces = {{
-                    //   {{23, 0, 10, 19, 5, X}}, // bottom children
-                    //   {{22, 1, 11, 4, 14, X}}, //
-                    //   {{24, 2, 6, 18, 15, X}}, //
-                    //   {{25, 3, 4, 5, 6, X}},   //
-                    //   {{0, 26, 12, 21, 8, X}}, // top children
-                    //   {{1, 27, 13, 7, 16, X}}, //
-                    //   {{2, 28, 9, 20, 17, X}}, //
-                    //   {{3, 29, 7, 8, 9, X}}    //
-                    // }};
-                    // if (reference_cell_type != ReferenceCells::Wedge)
-                    //   cell_faces =
-                    //     cell->reference_cell().new_isotropic_child_cell_faces(
-                    //       chosen_line_tetrahedron);
+                    /*
+                    dealii::ndarray<unsigned int, 8, 6> cell_faces = {{
+                      {{23, 0, 10, 5, 19, X}}, // bottom children
+                      {{22, 1, 11, 14, 4, X}}, //
+                      {{24, 2, 6, 15, 18, X}}, //
+                      {{25, 3, 4, 6, 5, X}},   //
+                      {{0, 26, 12, 8, 21, X}}, // top children
+                      {{1, 27, 13, 16, 7, X}}, //
+                      {{2, 28, 9, 17, 20, X}}, //
+                      {{3, 29, 7, 9, 8, X}}    //
+                    }};
+                    if (reference_cell_type != ReferenceCells::Wedge)
+                      cell_faces =
+                        cell->reference_cell().new_isotropic_child_cell_faces(
+                          chosen_line_tetrahedron);
+                    */
 
                     const auto cell_faces =
                       cell->reference_cell().new_isotropic_child_cell_faces(
@@ -7758,22 +7768,23 @@ namespace internal
                     // vertices are given by face 11, the last
                     // vertex is the remaining of the tet
                     // TODO: Put in reference cell
-                    // dealii::ndarray<unsigned int, 8, 8> new_cells_vertices =
-                    // {
-                    //   {{{6, 0, 8, 15, 12, 17, X, X}},
-                    //    {{1, 6, 7, 13, 15, 16, X, X}},
-                    //    {{7, 8, 2, 16, 17, 14, X, X}},
-                    //    {{7, 6, 8, 16, 15, 17, X, X}},
-                    //    {{15, 12, 17, 9, 3, 11, X, X}},
-                    //    {{13, 15, 16, 4, 9, 10, X, X}},
-                    //    {{16, 17, 14, 10, 11, 5, X, X}},
-                    //    {{16, 15, 17, 10, 9, 11, X, X}}}};
+                    /*
+                    dealii::ndarray<unsigned int, 8, 8> new_cells_vertices = {
+                      {{{0, 6, 8, 12, 15, 17, X, X}},
+                       {{6, 1, 7, 15, 13, 16, X, X}},
+                       {{8, 7, 2, 17, 16, 14, X, X}},
+                       {{6, 7, 8, 15, 16, 17, X, X}},
+                       {{12, 15, 17, 3, 9, 11, X, X}},
+                       {{15, 13, 16, 9, 4, 10, X, X}},
+                       {{17, 16, 14, 11, 10, 5, X, X}},
+                       {{15, 16, 17, 9, 10, 11, X, X}}}};
 
-                    // if (reference_cell_type != ReferenceCells::Wedge &&
-                    //     reference_cell_type != ReferenceCells::Hexahedron)
-                    //   new_cells_vertices = cell->reference_cell()
-                    //                          .new_isotropic_child_cell_vertices(
-                    //                            chosen_line_tetrahedron);
+                    if (reference_cell_type != ReferenceCells::Wedge &&
+                        reference_cell_type != ReferenceCells::Hexahedron)
+                      new_cells_vertices = cell->reference_cell()
+                                             .new_isotropic_child_cell_vertices(
+                                               chosen_line_tetrahedron);
+                    */
 
                     const auto new_cells_vertices =
                       cell->reference_cell().new_isotropic_child_cell_vertices(
@@ -7835,18 +7846,11 @@ namespace internal
                               {
                                 const auto &face = new_cell->face(f);
 
-                                // load correct vertices
+                                // load correct vertices of cell
                                 auto new_cell_vertices = new_cells_vertices[c];
 
-                                // max 4 vertices (if face is quad)
-                                std::vector<unsigned int> vertices_0 = {
-                                  {face->vertex_index(0),
-                                   face->vertex_index(1),
-                                   face->vertex_index(2),
-                                   X}};
-
-                                // Load indices of vertices of face `f`
-                                std::vector<unsigned int> vertices_1(4);
+                                // Load correct indices of vertices of face `f`
+                                std::vector<unsigned int> vertices_0(4);
                                 for (unsigned int face_vertex_no :
                                      face->vertex_indices())
                                   {
@@ -7861,9 +7865,17 @@ namespace internal
                                           numbers::
                                             default_geometric_orientation);
                                     // Get according index from `vertex_indices`
-                                    vertices_1[face_vertex_no] = vertex_indices
+                                    vertices_0[face_vertex_no] = vertex_indices
                                       [new_cell_vertices[cell_vertex_no]];
                                   }
+
+                                // load real indices of face `f`
+                                // max 4 vertices (if face is quad)
+                                std::vector<unsigned int> vertices_1 = {
+                                  {face->vertex_index(0),
+                                   face->vertex_index(1),
+                                   face->vertex_index(2),
+                                   X}};
 
                                 // if really tri resize vectors correctly else
                                 // load the additional vertex
@@ -7876,7 +7888,7 @@ namespace internal
                                     vertices_1.resize(3);
                                   }
                                 else
-                                  vertices_0[3] = face->vertex_index(3);
+                                  vertices_1[3] = face->vertex_index(3);
 
                                 // Calculate combined orientation as permutation
                                 // of desired face vertex indices an actual
@@ -7885,8 +7897,8 @@ namespace internal
                                   f,
                                   face->reference_cell()
                                     .get_combined_orientation(
-                                      make_const_array_view(vertices_1),
-                                      make_const_array_view(vertices_0)));
+                                      make_const_array_view(vertices_0),
+                                      make_const_array_view(vertices_1)));
                               }
                           }
                       }
@@ -7902,7 +7914,7 @@ namespace internal
                                                  {{2, 3, 6, 7}},
                                                  {{0, 1, 2, 3}},
                                                  {{4, 5, 6, 7}}}};
-                    if (cell->n_faces() == 6)
+                    if (reference_cell_type == ReferenceCells::Hexahedron)
                       for (const auto f : cell->face_indices())
                         {
                           const auto combined_orientation =
