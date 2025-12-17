@@ -26,8 +26,8 @@
 // general test case
 template <int dim>
 void
-execute_test(std::initializer_list<ReferenceCell> cell_types,
-             std::initializer_list<ReferenceCell> face_types)
+execute_test(const std::initializer_list<ReferenceCell> &cell_types,
+             const std::initializer_list<ReferenceCell> &face_types)
 {
   Triangulation<dim> triangulation;
 
