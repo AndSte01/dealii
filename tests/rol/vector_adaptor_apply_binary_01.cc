@@ -1,7 +1,7 @@
 // ------------------------------------------------------------------------
 //
 // SPDX-License-Identifier: LGPL-2.1-or-later
-// Copyright (C) 2017 - 2025 by the deal.II authors
+// Copyright (C) 2017 - 2024 by the deal.II authors
 //
 // This file is part of the deal.II library.
 //
@@ -12,17 +12,17 @@
 //
 // ------------------------------------------------------------------------
 
-// Check the ROLVector with MPI ghosted vectors using ROL::Vector's
-// checkVector() method.
+// Check the Rol::VectorAdaptor's applyBinary function applied to a fully
+// distributed (MPI) vector.
 
 #include <deal.II/lac/generic_linear_algebra.h>
 
-#include <deal.II/trilinos/rol_vector.h>
+#include <deal.II/optimization/rol/vector_adaptor.h>
 
 #include "../tests.h"
 
 
-// Vectors are prepared similar to deal.II's test: parallel_vector_07
+// Taken from deal.II's test: parallel_vector_07
 template <typename VectorType>
 void
 prepare_vector(VectorType &v)
@@ -32,7 +32,7 @@ prepare_vector(VectorType &v)
                      numproc =
                        dealii::Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
-  const unsigned int set = 200;
+  const unsigned int set = 10;
   AssertIndexRange(numproc, set - 2);
   const unsigned int local_size  = set - myid;
   unsigned int       global_size = 0;
@@ -50,21 +50,9 @@ prepare_vector(VectorType &v)
   // processors
   IndexSet local_owned(global_size);
   local_owned.add_range(my_start, my_start + local_size);
-  IndexSet     local_relevant(global_size);
-  unsigned int ghost_indices[10] = {1,
-                                    2,
-                                    13,
-                                    set - 2,
-                                    set - 1,
-                                    set,
-                                    set + 1,
-                                    2 * set,
-                                    2 * set + 1,
-                                    2 * set + 3};
-  local_relevant.add_indices(&ghost_indices[0], &ghost_indices[0] + 10);
 
   // --- Prepare vector.
-  v.reinit(local_owned, local_relevant, MPI_COMM_WORLD);
+  v.reinit(local_owned, MPI_COMM_WORLD);
 }
 
 
@@ -72,10 +60,11 @@ template <typename VectorType>
 void
 test()
 {
-  VectorType a, b, c;
+  VectorType a, b;
   prepare_vector(a);
   prepare_vector(b);
-  prepare_vector(c);
+
+  Testing::srand(1);
 
   for (auto iterator = a.begin(); iterator != a.end(); ++iterator)
     *iterator = static_cast<double>(Testing::rand()) / RAND_MAX;
@@ -83,39 +72,27 @@ test()
   for (auto iterator = b.begin(); iterator != b.end(); ++iterator)
     *iterator = static_cast<double>(Testing::rand()) / RAND_MAX;
 
-  for (auto iterator = c.begin(); iterator != c.end(); ++iterator)
-    *iterator = static_cast<double>(Testing::rand()) / RAND_MAX;
-
   a.compress(VectorOperation::insert);
   b.compress(VectorOperation::insert);
-  c.compress(VectorOperation::insert);
-
-  a.update_ghost_values();
-  b.update_ghost_values();
-  c.update_ghost_values();
 
   ROL::Ptr<VectorType> a_ptr = ROL::makePtr<VectorType>(a);
   ROL::Ptr<VectorType> b_ptr = ROL::makePtr<VectorType>(b);
-  ROL::Ptr<VectorType> c_ptr = ROL::makePtr<VectorType>(c);
 
-  a_ptr->update_ghost_values();
-  b_ptr->update_ghost_values();
-  c_ptr->update_ghost_values();
+  ROL::Elementwise::Multiply<double> mult;
+  ROL::Elementwise::Plus<double>     plus;
 
   // --- Testing the constructor
-  TrilinosWrappers::ROLVector<VectorType> a_rol(a_ptr);
-  TrilinosWrappers::ROLVector<VectorType> b_rol(b_ptr);
-  TrilinosWrappers::ROLVector<VectorType> c_rol(c_ptr);
+  Rol::VectorAdaptor<VectorType> a_rol(a_ptr);
+  Rol::VectorAdaptor<VectorType> b_rol(b_ptr);
 
-  ROL::Ptr<std::ostream> out_stream;
-  ROL::nullstream        bhs; // outputs nothing
+  a_rol.print(std::cout);
+  b_rol.print(std::cout);
 
-  if (dealii::Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    out_stream = ROL::makePtrFromRef<std::ostream>(std::cout);
-  else
-    out_stream = ROL::makePtrFromRef<std::ostream>(bhs);
+  a_rol.applyBinary(mult, b_rol);
+  a_rol.print(std::cout);
 
-  a_rol.checkVector(b_rol, c_rol, true, *out_stream);
+  a_rol.applyBinary(plus, b_rol);
+  a_rol.print(std::cout);
 }
 
 
@@ -137,6 +114,7 @@ main(int argc, char **argv)
 
   try
     {
+      test<LinearAlgebraTrilinos::MPI::Vector>();
       test<LinearAlgebra::distributed::Vector<double>>();
     }
   catch (const std::exception &exc)
