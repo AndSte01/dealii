@@ -1983,7 +1983,7 @@ namespace Step42
     distributed_active_set_vector = 0.;
     for (const auto index : active_set)
       distributed_active_set_vector[index] = 1.;
-    distributed_lambda.compress(VectorOperation::insert);
+    distributed_active_set_vector.compress(VectorOperation::insert);
 
     TrilinosWrappers::MPI::Vector active_set_vector(locally_relevant_dofs,
                                                     mpi_communicator);
@@ -2021,16 +2021,15 @@ namespace Step42
 
     // In the remainder of the function, we generate one VTU file on
     // every processor, indexed by the subdomain id of this processor.
-    // On the first processor, we then also create a <code>.pvtu</code>
+    // On the first processor, the call below also creates a <code>.pvtu</code>
     // file that indexes <i>all</i> of the VTU files so that the entire
     // set of output files can be read at once. These <code>.pvtu</code>
     // are used by Paraview to describe an entire parallel computation's
-    // output files. We then do the same again for the competitor of
-    // Paraview, the VisIt visualization program, by creating a matching
-    // <code>.visit</code> file.
+    // output files. The principal competitor of Paraview, the VisIt
+    // visualization program, can also read these files.
     const std::string pvtu_filename = data_out.write_vtu_with_pvtu_record(
       output_dir, "solution", current_refinement_cycle, mpi_communicator, 2);
-    pcout << pvtu_filename << std::endl;
+    pcout << output_dir << pvtu_filename << std::endl;
 
     TrilinosWrappers::MPI::Vector tmp(solution);
     tmp *= -1;
