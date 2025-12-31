@@ -6614,9 +6614,9 @@ namespace internal
 
                 const auto &cell_reference_cell = cell->reference_cell();
 
-                unsigned int n_new_lines = 0;
-                unsigned int n_new_faces = 0;
-                unsigned int n_new_cells =
+                unsigned int       n_new_lines = 0;
+                unsigned int       n_new_faces = 0;
+                const unsigned int n_new_cells =
                   cell_reference_cell.n_isotropic_children();
 
                 // Must match the information used close the beginning of this
