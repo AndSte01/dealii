@@ -1848,6 +1848,50 @@ namespace
     else
       return line_orientation == D ? 1 : 0;
   }
+
+  // Several parts of Triangulation (e.g., TriaLevel) are not templated on the
+  // dimension and thus require de-templated versions of some ReferenceCell
+  // functions.
+  unsigned int
+  max_n_faces(const unsigned int structdim)
+  {
+    switch (structdim)
+      {
+        case 0:
+          return ReferenceCells::max_n_faces<0>();
+        case 1:
+          return ReferenceCells::max_n_faces<1>();
+        case 2:
+          return ReferenceCells::max_n_faces<2>();
+        case 3:
+          return ReferenceCells::max_n_faces<3>();
+        default:
+          DEAL_II_ASSERT_UNREACHABLE();
+          return numbers::invalid_unsigned_int;
+      }
+  }
+
+  // Detemplate ReferenceCells::max_n_children
+  // currently unused, might be better to resort to other sources of information
+  // such as tria_objects.children_per_object.
+  // unsigned int
+  // max_n_children(const unsigned int structdim)
+  // {
+  //   switch (structdim)
+  //     {
+  //       case 0:
+  //         return ReferenceCells::max_n_children<0>();
+  //       case 1:
+  //         return ReferenceCells::max_n_children<1>();
+  //       case 2:
+  //         return ReferenceCells::max_n_children<2>();
+  //       case 3:
+  //         return ReferenceCells::max_n_children<3>();
+  //       default:
+  //         DEAL_II_ASSERT_UNREACHABLE();
+  //         return numbers::invalid_unsigned_int;
+  //     }
+  // }
 } // end of anonymous namespace
 
 
@@ -5162,7 +5206,7 @@ namespace internal
         // Now add the four (two)
         // new cells!
         typename Triangulation<dim, spacedim>::raw_cell_iterator
-          subcells[GeometryInfo<dim>::max_children_per_cell];
+          subcells[ReferenceCells::max_n_children<dim>()];
         while (next_unused_cell->used() == true)
           ++next_unused_cell;
 
@@ -6421,7 +6465,11 @@ namespace internal
 
                         case ReferenceCells::Pyramid:
                           // TODO: Pyramid
-                          DEAL_II_NOT_IMPLEMENTED();
+                          // - No vertices (all provided by face refinement)
+                          // - 5 faces for center pyramid
+                          // - 4 times 2 for the remaining tets
+                          needed_lines_single += 4;
+                          needed_faces_single += 13;
                           break;
 
                         case ReferenceCells::Wedge:
@@ -7002,8 +7050,8 @@ namespace internal
                       break;
 
                     case ReferenceCells::Pyramid:
-                      DEAL_II_NOT_IMPLEMENTED();
-                      // TODO: Pyramid
+                      n_new_lines = 4;
+                      n_new_faces = 13;
                       break;
 
                     case ReferenceCells::Wedge:
@@ -7068,6 +7116,68 @@ namespace internal
                         j, numbers::default_geometric_orientation);
                   }
 
+                // We always get 8 children per refined cell, whether from
+                // refinement of a hex or a tet:
+                /*
+                std::array<
+                  typename Triangulation<dim, spacedim>::raw_cell_iterator,
+                  max_n_new_children>
+                  new_cells;
+                { // SETUP_CELLS
+                  for (unsigned int c = 0; c < n_new_cells; ++c)
+                    {
+                      // Since we search for pairs of hexes (next_free_hex
+                      // returns a pair) we need to search only every other
+                      // time.
+                      if (c % 2 == 0)
+                        next_unused_cell =
+                          triangulation.levels[level + 1]->cells.next_free_hex(
+                            triangulation, level + 1);
+                      else
+                        ++next_unused_cell;
+
+                      new_cells[c] = next_unused_cell;
+
+                      auto &new_cell = new_cells[c];
+
+                      // // children have the same type as the parent
+                      // triangulation.levels[new_cell->level()]
+                      //   ->reference_cell[new_cell->index()] =
+                      //   cell_reference_cell;
+
+                      // Copy parent data to child.
+                      // AssertIsNotUsed(new_cell);
+                      // new_cell->set_used_flag();
+                      // new_cell->clear_user_flag();
+                      // new_cell->clear_user_data();
+                      // new_cell->clear_children();
+                      // new_cell->set_material_id(cell->material_id());
+                      // new_cell->set_manifold_id(cell->manifold_id());
+                      // new_cell->set_subdomain_id(cell->subdomain_id());
+
+                      // We only store the parent for every second cell. That's
+                      // because cells are created during refinement in
+                      // multiples of two, and so two successive cells always
+                      // share the same parent. As a consequence, we can save a
+                      // bit of work by skipping setting parent indices for the
+                      // odd children.
+                      if (i % 2 == 0)
+                        new_cell->set_parent(cell->index());
+
+                      // set the orientation flag to its default state for all
+                      // faces initially. later on go the other way round and
+                      // reset faces that are at the boundary of the mother cube
+                      // TODO: This might only be necessary for Hexes. For all
+                      // other cells the orientation is calculated for all faces
+                      // one by one. (Only a guess though).
+                      // for (const auto f : new_cell->face_indices())
+                      //   new_cell->set_combined_face_orientation(
+                      //     f, numbers::default_geometric_orientation);
+                    }
+                  // for (unsigned int c = 0; c < n_new_cells / 2; ++c)
+                  //   cell->set_children(2 * c, new_cells[2 * c]->index());
+                } // SETUP_CELLS
+                */
 
                 { // CREATE_CELLS
                   // Build a list of all relevant vertices required for
@@ -7176,6 +7286,30 @@ namespace internal
                       }
                   } // GET_VERTICES
 
+                  /*
+                  // TODO: REMOVE the output when finished
+                  std::cout << "Vertices of " << cell_reference_cell.to_string()
+                            << std::endl
+                            << std::endl
+                            << "                coord" << std::endl
+                            << "id  index    x    y    z" << std::endl;
+
+                  // TODO: REMOVE the output when finished
+                  unsigned int counter = 0;
+                  for (auto vertex_ind : vertex_indices)
+                    {
+                      std::cout
+                        << std::setw(2) << counter << "  " << std::setw(5)
+                        << vertex_ind << "  " << std::setw(4)
+                        << triangulation.vertices[vertex_ind][0] << " "
+                        << std::setw(4) << triangulation.vertices[vertex_ind][1]
+                        << " " << std::setw(4)
+                        << triangulation.vertices[vertex_ind][2];
+                      std::cout << std::endl;
+
+                      ++counter;
+                    }
+                  */
 
                   unsigned int chosen_line_tetrahedron = 0;
 
@@ -7249,8 +7383,21 @@ namespace internal
                         break;
 
                       case ReferenceCells::Pyramid:
-                        // TODO: Pyramid
-                        DEAL_II_NOT_IMPLEMENTED();
+                        {
+                          // Directions so that middle bottom pyramids all have
+                          // lines with default orientation. Oder as children of
+                          // refined bottom quad.
+                          static constexpr dealii::ndarray<unsigned int, 4, 2>
+                            new_line_vertices = {{{{13, 9}},  //
+                                                  {{13, 10}}, //
+                                                  {{13, 11}}, //
+                                                  {{13, 12}}}};
+
+                          for (unsigned int i = 0; i < n_new_lines; ++i)
+                            new_lines[i]->set_bounding_object_indices(
+                              {vertex_indices[new_line_vertices[i][0]],
+                               vertex_indices[new_line_vertices[i][1]]});
+                        }
                         break;
 
                       case ReferenceCells::Wedge:
@@ -7473,6 +7620,45 @@ namespace internal
                     for (unsigned int i = 0; i < relevant_lines_counter; ++i)
                       relevant_line_indices[i] = relevant_lines[i]->index();
 
+                    /*
+                    // TODO: REMOVE the output when finished
+                    std::cout << std::endl
+                              << std::endl
+                              << std::endl
+                              << "Lines of " << cell_reference_cell.to_string()
+                              << std::endl
+                              << std::endl
+                              << "             global      local" << std::endl
+                              << "id  index  from -> to  from -> to"
+                              << std::endl;
+
+                    // TODO: REMOVE the output when finished
+                    unsigned int counter = 0;
+                    for (unsigned int i = 0; i < relevant_lines_counter; ++i)
+                      {
+                        auto         line            = relevant_lines[i];
+                        unsigned int glob_vert_ind_0 = line->vertex_index(0);
+                        unsigned int glob_vert_ind_1 = line->vertex_index(1);
+
+                        std::cout
+                          << std::setw(2) << counter << "  " << std::setw(5)
+                          << line->index() << "  " << std::setw(4)
+                          << glob_vert_ind_0 << "    " << std::setw(2)
+                          << glob_vert_ind_1 << "  " << std::setw(4)
+                          << std::distance(vertex_indices.begin(),
+                                           std::find(vertex_indices.begin(),
+                                                     vertex_indices.end(),
+                                                     glob_vert_ind_0))
+                          << "    " << std::setw(2)
+                          << std::distance(vertex_indices.begin(),
+                                           std::find(vertex_indices.begin(),
+                                                     vertex_indices.end(),
+                                                     glob_vert_ind_1));
+                        std::cout << std::endl;
+
+                        ++counter;
+                      }
+                    */
 
                     // New faces (internal to the parent) are required for the
                     // creation of children. The lines bounding these new faces
@@ -7480,6 +7666,26 @@ namespace internal
                     // these lines is then determined using the lookup table
                     // retrieved below, by providing the appropriate indices
                     // into `relevant_lines`.
+                    // // TODO: Put into reference cell
+                    // dealii::ndarray<unsigned int, 13, 4> new_face_lines = {
+                    //   {{{0, 10, 16, X}}, // child 0
+                    //    {{2, 16, 6, X}},
+                    //    {{0, 17, 12, X}}, // child 1
+                    //    {{3, 7, 17, X}},
+                    //    {{1, 18, 15, X}}, // child 2
+                    //    {{2, 4, 18, X}},
+                    //    {{1, 13, 19, X}}, // child 3
+                    //    {{3, 19, 9, X}},
+                    //    {{5, 8, 11, 14}},  // child 9 (top)
+                    //    {{11, 17, 16, X}}, // child 8 (upside down)
+                    //    {{14, 18, 19, X}},
+                    //    {{5, 16, 18, X}},
+                    //    {{8, 19, 17, X}}}};
+                    // if (cell_reference_cell != ReferenceCells::Pyramid)
+                    //   new_face_lines =
+                    //     cell->reference_cell().new_isotropic_child_face_lines(
+                    //       chosen_line_tetrahedron);
+
                     const auto &new_face_lines =
                       cell_reference_cell.new_isotropic_child_face_lines(
                         chosen_line_tetrahedron);
@@ -7490,6 +7696,34 @@ namespace internal
                     // correct line connectivity desired by the reference cell.
                     // This is very similar to the refinement of triangles in 2d
                     // where the same problem occurred.
+                    // // TODO: Put in reference cell
+                    // dealii::ndarray<unsigned int, 13, 4, 2>
+                    //   new_face_lines_vert = {
+                    //     {// child 0
+                    //      {{{{13, 7}}, {{7, 9}}, {{9, 13}}, {{X, X}}}},
+                    //      {{{{5, 13}}, {{13, 9}}, {{9, 5}}, {{X, X}}}},
+                    //      // child 1
+                    //      {{{{7, 13}}, {{13, 10}}, {{10, 7}}, {{X, X}}}},
+                    //      {{{{13, 6}}, {{6, 10}}, {{10, 13}}, {{X, X}}}},
+                    //      // child 2
+                    //      {{{{8, 13}}, {{13, 11}}, {{11, 8}}, {{X, X}}}},
+                    //      {{{{13, 5}}, {{5, 11}}, {{11, 13}}, {{X, X}}}},
+                    //      // child 3
+                    //      {{{{13, 8}}, {{8, 12}}, {{12, 13}}, {{X, X}}}},
+                    //      {{{{6, 13}}, {{13, 12}}, {{12, 6}}, {{X, X}}}},
+                    //      // child 9 (top)
+                    //      {{{{9, 11}}, {{10, 12}}, {{9, 10}}, {{11, 12}}}},
+                    //      // child 8 (upside down)
+                    //      {{{{9, 10}}, {{10, 13}}, {{13, 9}}, {{X, X}}}},
+                    //      {{{{12, 11}}, {{11, 13}}, {{13, 12}}, {{X, X}}}},
+                    //      {{{{11, 9}}, {{9, 13}}, {{13, 11}}, {{X, X}}}},
+                    //      {{{{10, 12}}, {{12, 13}}, {{13, 10}}, {{X, X}}}}}};
+                    // if (cell_reference_cell != ReferenceCells::Pyramid)
+                    //   new_face_lines_vert =
+                    //     cell->reference_cell()
+                    //       .new_isotropic_child_face_line_vertices(
+                    //         chosen_line_tetrahedron);
+
                     const auto &new_face_lines_vert =
                       cell_reference_cell
                         .new_isotropic_child_face_line_vertices(
@@ -7646,10 +7880,103 @@ namespace internal
                           }
                       }
 
+                    /*
+                  // TODO: REMOVE the output when finished
+                  std::cout
+                    << std::endl
+                    << std::endl
+                    << std::endl
+                    << "Vertices of faces of "
+                    << cell_reference_cell.to_string()
+                    << "  n=" << face_indices_counter << std::endl
+                    << std::endl
+                    << " id  index  vertices (glob)     vertices (loc)"
+                    << std::endl;
+
+                  // TODO: REMOVE the output when finished
+                  unsigned int counter = 0;
+                  for (auto face_index : face_indices)
+                    {
+                      // stolen from tria_accessor quad(const unsigned int i)
+                      typename dealii::internal::TriangulationImplementation::
+                        Iterators<dim, spacedim>::quad_iterator face =
+                          typename dealii::internal::
+                            TriangulationImplementation::
+                              Iterators<dim, spacedim>::quad_iterator(
+                                &triangulation, 0, face_index);
+
+                      unsigned int glob_vert_ind_0 = face->vertex_index(0);
+                      unsigned int glob_vert_ind_1 = face->vertex_index(1);
+                      unsigned int glob_vert_ind_2 = face->vertex_index(2);
+                      unsigned int glob_vert_ind_3 = X;
+                      if (face->reference_cell().n_faces() == 4)
+                        glob_vert_ind_3 = face->vertex_index(3);
+
+                      std::cout << std::setw(3) << counter << "  "
+                                << std::setw(5) << face->index() << "  "
+                                << std::setw(4) << glob_vert_ind_0 << " "
+                                << std::setw(3) << glob_vert_ind_1 << " "
+                                << std::setw(3) << glob_vert_ind_2 << " ";
+                      if (glob_vert_ind_3 != X)
+                        std::cout << std::setw(3) << glob_vert_ind_3
+                                  << "  | ";
+                      else
+                        std::cout << "     | ";
+                      // output local vertices
+                      std::cout
+                        << std::setw(3)
+                        << std::distance(vertex_indices.begin(),
+                                         std::find(vertex_indices.begin(),
+                                                   vertex_indices.end(),
+                                                   glob_vert_ind_0))
+                        << " " << std::setw(3)
+                        << std::distance(vertex_indices.begin(),
+                                         std::find(vertex_indices.begin(),
+                                                   vertex_indices.end(),
+                                                   glob_vert_ind_1))
+                        << " " << std::setw(3)
+                        << std::distance(vertex_indices.begin(),
+                                         std::find(vertex_indices.begin(),
+                                                   vertex_indices.end(),
+                                                   glob_vert_ind_2));
+                      if (glob_vert_ind_3 != X)
+                        std::cout
+                          << " " << std::setw(3)
+                          << std::distance(vertex_indices.begin(),
+                                           std::find(vertex_indices.begin(),
+                                                     vertex_indices.end(),
+                                                     glob_vert_ind_3));
+                      std::cout << std::endl;
+
+                      ++counter;
+                      // stop if finished
+                      if (counter == face_indices_counter)
+                        break;
+                    }
+                  */
+
                     // Similar to the faces described above, we need to identify
                     // which faces (specified by their indices in
                     // `face_indices`) bound the new cells. This information is
                     // stored in the ReferenceCell and retrieved here.
+                    // // TODO: Put in reference cell
+                    // dealii::ndarray<unsigned int, 10, 6> cell_faces = {{
+                    //   {{13, 17, 0, 26, 1, X}}, // bottom pyramids
+                    //   {{14, 2, 22, 25, 3, X}}, //
+                    //   {{15, 18, 4, 5, 29, X}}, //
+                    //   {{16, 6, 21, 7, 30, X}}, //
+                    //   {{5, 1, 20, 11, X, X}},  // bottom wedges
+                    //   {{7, 3, 12, 24, X, X}},  //
+                    //   {{0, 2, 28, 9, X, X}},   //
+                    //   {{4, 6, 10, 32, X, X}},  //
+                    //   {{8, 9, 10, 11, 12, X}}, // upside down pyramid
+                    //   {{8, 19, 23, 27, 31, X}} // top pyramid
+                    // }};
+                    // if (cell_reference_cell != ReferenceCells::Pyramid)
+                    //   cell_faces =
+                    //     cell->reference_cell().new_isotropic_child_cell_faces(
+                    //       chosen_line_tetrahedron);
+
                     const auto cell_faces =
                       cell_reference_cell.new_isotropic_child_cell_faces(
                         chosen_line_tetrahedron);
@@ -7658,11 +7985,31 @@ namespace internal
                     // mismatches between the face and the cell's ReferenceCell.
                     // (See the discussion above in new face creation for more
                     // details.)
+                    // TODO: Put in reference cell
+                    // TODO: Pyramid
+                    // dealii::ndarray<unsigned int, 10, 8> new_cells_vertices =
+                    // {{
+                    //   {{0, 7, 5, 13, 9, X, X, X}},    // bottom pyramid
+                    //   {{7, 1, 13, 6, 10, X, X, X}},   //
+                    //   {{5, 13, 2, 8, 11, X, X, X}},   //
+                    //   {{13, 6, 8, 3, 12, X, X, X}},   //
+                    //   {{5, 13, 11, 9, X, X, X, X}},   // bottom wedged
+                    //   {{13, 6, 12, 10, X, X, X, X}},  //
+                    //   {{7, 13, 9, 10, X, X, X, X}},   //
+                    //   {{13, 8, 11, 12, X, X, X, X}},  //
+                    //   {{9, 11, 10, 12, 13, X, X, X}}, // upside down pyramid
+                    //   {{9, 10, 11, 12, 4, X, X, X}},  // top pyramid
+                    // }};
+                    // if (cell_reference_cell != ReferenceCells::Pyramid)
+                    //   new_cells_vertices = cell->reference_cell()
+                    //                          .new_isotropic_child_cell_vertices(
+                    //                            chosen_line_tetrahedron);
+
                     const auto new_cells_vertices =
                       cell_reference_cell.new_isotropic_child_cell_vertices(
                         chosen_line_tetrahedron);
 
-                    // 1. Preserve data that can only be extracted from active
+                    // 1. Perserve data that can only be extracted from active
                     //    cells.
                     //    Parent becomes inactive after setting the first child!
                     const dealii::types::subdomain_id cell_subdomain_id =
@@ -7708,7 +8055,7 @@ namespace internal
                             cell->set_children(c, new_cell->index());
                           }
 
-                        // 4.a Determine the cell reference cell using the
+                        // 4.a Determine the faces referenc cell using the
                         //     number of vertices it has according to
                         //     `new_cells_vertices`.
                         const ReferenceCell child_reference_cell =
@@ -7738,8 +8085,6 @@ namespace internal
 
                             // Pyramids and Wedges share same number of faces
                             case ReferenceCells::Pyramid:
-                              // TODO: Pyramid, just remove
-                              DEAL_II_NOT_IMPLEMENTED();
                             case ReferenceCells::Wedge:
                               new_cell->set_bounding_object_indices(
                                 {face_indices[cell_faces[c][0]],
@@ -7768,10 +8113,10 @@ namespace internal
                         // go through the faces and figure the orientation out
                         // the hard way
 
-                        // Set the orientation flag to its default state for
+                        // set the orientation flag to its default state for
                         // all faces initially. later on go the other way
                         // round and reset faces that are at the boundary of
-                        // the mother cube.
+                        // the mother cube
                         // TODO: This might only be necessary for Hexes. For
                         // all other cells the orientation is calculated for
                         // all faces one by one. (Only a guess though).
@@ -7842,6 +8187,10 @@ namespace internal
                                                         face->n_vertices())));
                               }
                           }
+                        // else
+                        // We nedd to store the cell for the optimized
+                        // algorithm below.
+                        // new_cells[c] = next_unused_cell;
                       }
 
                     // For hexes, we can simply inherit the orientation values

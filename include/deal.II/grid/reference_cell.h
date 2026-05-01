@@ -1633,8 +1633,25 @@ ReferenceCell<dim>::new_isotropic_child_face_lines(
                 }
             }
 
-          case ReferenceCells::Pyramid:
-            DEAL_II_NOT_IMPLEMENTED();
+      case ReferenceCells::Pyramid:
+        {
+          constexpr dealii::ndarray<unsigned int, 13, 4>
+            new_quad_lines_pyramid = {
+              {{{0, 10, 16, X}}, // child 0
+               {{2, 16, 6, X}},
+               {{0, 17, 12, X}}, // child 1
+               {{3, 7, 17, X}},
+               {{1, 18, 15, X}}, // child 2
+               {{2, 4, 18, X}},
+               {{1, 13, 19, X}}, // child 3
+               {{3, 19, 9, X}},
+               {{5, 8, 11, 14}},  // child 9 (top)
+               {{11, 17, 16, X}}, // child 8 (upside down)
+               {{14, 18, 19, X}},
+               {{5, 16, 18, X}},
+               {{8, 19, 17, X}}}};
+          return new_quad_lines_pyramid;
+        }
 
           case ReferenceCells::Wedge:
             {
@@ -1754,8 +1771,31 @@ ReferenceCell<dim>::new_isotropic_child_face_line_vertices(
                 }
             }
 
-          case ReferenceCells::Pyramid:
-            DEAL_II_NOT_IMPLEMENTED();
+      case ReferenceCells::Pyramid:
+        {
+          constexpr dealii::ndarray<unsigned int, 13, 4, 2>
+            quad_lines_vertices_pyramid = {
+              {// child 0
+               {{{{13, 7}}, {{7, 9}}, {{9, 13}}, {{X, X}}}},
+               {{{{5, 13}}, {{13, 9}}, {{9, 5}}, {{X, X}}}},
+               // child 1
+               {{{{7, 13}}, {{13, 10}}, {{10, 7}}, {{X, X}}}},
+               {{{{13, 6}}, {{6, 10}}, {{10, 13}}, {{X, X}}}},
+               // child 2
+               {{{{8, 13}}, {{13, 11}}, {{11, 8}}, {{X, X}}}},
+               {{{{13, 5}}, {{5, 11}}, {{11, 13}}, {{X, X}}}},
+               // child 3
+               {{{{13, 8}}, {{8, 12}}, {{12, 13}}, {{X, X}}}},
+               {{{{6, 13}}, {{13, 12}}, {{12, 6}}, {{X, X}}}},
+               // child 9 (top)
+               {{{{9, 11}}, {{10, 12}}, {{9, 10}}, {{11, 12}}}},
+               // child 8 (upside down)
+               {{{{9, 10}}, {{10, 13}}, {{13, 9}}, {{X, X}}}},
+               {{{{12, 11}}, {{11, 13}}, {{13, 12}}, {{X, X}}}},
+               {{{{11, 9}}, {{9, 13}}, {{13, 11}}, {{X, X}}}},
+               {{{{10, 12}}, {{12, 13}}, {{13, 10}}, {{X, X}}}}}};
+          return quad_lines_vertices_pyramid;
+        }
 
           case ReferenceCells::Wedge:
             {
@@ -1823,84 +1863,90 @@ ReferenceCell<dim>::new_isotropic_child_cell_faces(
     {
       const unsigned int X = numbers::invalid_unsigned_int;
 
-      switch (this->kind)
+  switch (this->kind)
+    {
+      case ReferenceCells::Tetrahedron:
         {
-          case ReferenceCells::Tetrahedron:
-            {
-              switch (refinement_choice)
-                {
-                  case 0:
-                    // new line is (6, 8)
-                    return {{
-                      {{8, 13, 16, 0, X, X}},
-                      {{9, 12, 1, 21, X, X}},
-                      {{10, 2, 17, 20, X, X}},
-                      {{3, 14, 18, 22, X, X}},
-                      {{11, 1, 4, 5, X, X}},
-                      {{15, 0, 4, 6, X, X}},
-                      {{19, 7, 6, 3, X, X}},
-                      {{23, 5, 2, 7, X, X}},
-                      {{X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X}},
-                    }};
-                  case 1:
-                    // new line is (5, 7)
-                    return {{
-                      {{8, 13, 16, 0, X, X}},
-                      {{9, 12, 1, 21, X, X}},
-                      {{10, 2, 17, 20, X, X}},
-                      {{3, 14, 18, 22, X, X}},
-                      {{11, 4, 0, 5, X, X}},
-                      {{15, 4, 1, 6, X, X}},
-                      {{19, 2, 5, 7, X, X}},
-                      {{23, 6, 7, 3, X, X}},
-                      {{X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X}},
-                    }};
-                  case 2:
-                    // new line is (4, 9)
-                    return {{
-                      {{8, 13, 16, 0, X, X}},
-                      {{9, 12, 1, 21, X, X}},
-                      {{10, 2, 17, 20, X, X}},
-                      {{3, 14, 18, 22, X, X}},
-                      {{11, 4, 5, 2, X, X}},
-                      {{15, 6, 7, 3, X, X}},
-                      {{19, 5, 0, 6, X, X}},
-                      {{23, 1, 4, 7, X, X}},
-                      {{X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X}},
-                    }};
-                  default:
-                    DEAL_II_ASSERT_UNREACHABLE();
-                }
-            }
-          case ReferenceCells::Pyramid:
-            DEAL_II_NOT_IMPLEMENTED();
+          constexpr dealii::ndarray<unsigned int, 3, 10, 6> cell_quads_tet = {
+            {// new line is (6, 8)
+             {{
+               {{8, 13, 16, 0, X, X}},
+               {{9, 12, 1, 21, X, X}},
+               {{10, 2, 17, 20, X, X}},
+               {{3, 14, 18, 22, X, X}},
+               {{11, 1, 4, 5, X, X}},
+               {{15, 0, 4, 6, X, X}},
+               {{19, 7, 6, 3, X, X}},
+               {{23, 5, 2, 7, X, X}},
+               {{X, X, X, X, X, X}},
+               {{X, X, X, X, X, X}},
+             }},
+             // new line is (5, 7)
+             {{
+               {{8, 13, 16, 0, X, X}},
+               {{9, 12, 1, 21, X, X}},
+               {{10, 2, 17, 20, X, X}},
+               {{3, 14, 18, 22, X, X}},
+               {{11, 4, 0, 5, X, X}},
+               {{15, 4, 1, 6, X, X}},
+               {{19, 2, 5, 7, X, X}},
+               {{23, 6, 7, 3, X, X}},
+               {{X, X, X, X, X, X}},
+               {{X, X, X, X, X, X}},
+             }},
+             // new line is (4, 9)
+             {{
+               {{8, 13, 16, 0, X, X}},
+               {{9, 12, 1, 21, X, X}},
+               {{10, 2, 17, 20, X, X}},
+               {{3, 14, 18, 22, X, X}},
+               {{11, 4, 5, 2, X, X}},
+               {{15, 6, 7, 3, X, X}},
+               {{19, 5, 0, 6, X, X}},
+               {{23, 1, 4, 7, X, X}},
+               {{X, X, X, X, X, X}},
+               {{X, X, X, X, X, X}},
+             }}}};
+          return cell_quads_tet[refinement_choice];
+        }
+      case ReferenceCells::Pyramid:
+        {
+          constexpr dealii::ndarray<unsigned int, 10, 6> cell_quads_pyramid = {{
+            {{13, 17, 0, 26, 1, X}}, // bottom pyramids
+            {{14, 2, 22, 25, 3, X}}, //
+            {{15, 18, 4, 5, 29, X}}, //
+            {{16, 6, 21, 7, 30, X}}, //
+            {{5, 1, 20, 11, X, X}},  // bottom wedges
+            {{7, 3, 12, 24, X, X}},  //
+            {{0, 2, 28, 9, X, X}},   //
+            {{4, 6, 10, 32, X, X}},  //
+            {{8, 9, 10, 11, 12, X}}, // upside down pyramid
+            {{8, 19, 23, 27, 31, X}} // top pyramid
+          }};
+          return cell_quads_pyramid;
+        }
 
-          case ReferenceCells::Wedge:
-            {
-              // Considerations that went into creating this table
-              // - Keep aspect ratio of 1.0 if parent had 1.0 (this is why the
-              //   centre wedge is rotated by 180° compared to the parent)
-              // - Order of children is similar to the order of a reference
-              //   triangle in the x-y-plane (i.e. like the top triangle of the
-              //   parent)
-              constexpr dealii::ndarray<unsigned int, 10, 6> cell_quads_wedge =
-                {{
-                  {{23, 0, 10, 5, 19, X}}, // bottom children
-                  {{22, 1, 11, 14, 4, X}}, //
-                  {{24, 2, 6, 15, 18, X}}, //
-                  {{25, 3, 6, 5, 4, X}},   //
-                  {{0, 26, 12, 8, 21, X}}, // top children
-                  {{1, 27, 13, 16, 7, X}}, //
-                  {{2, 28, 9, 17, 20, X}}, //
-                  {{3, 29, 9, 8, 7, X}},   //
-                  {{X, X, X, X, X, X}},
-                  {{X, X, X, X, X, X}},
-                }};
-              return cell_quads_wedge;
-            }
+      case ReferenceCells::Wedge:
+        {
+          // Considerations that went into creating this table
+          // - Keep aspect ratio of 1.0 if parent had 1.0 (this is why the
+          //   centre wedge is rotated by 180° compared to the parent)
+          // - Order of children is similar to the order of a reference triangle
+          //   in the x-y-plane (i.e. like the top triangle of the parent)
+          constexpr dealii::ndarray<unsigned int, 10, 6> cell_quads_wedge = {{
+            {{23, 0, 10, 5, 19, X}}, // bottom children
+            {{22, 1, 11, 14, 4, X}}, //
+            {{24, 2, 6, 15, 18, X}}, //
+            {{25, 3, 6, 5, 4, X}},   //
+            {{0, 26, 12, 8, 21, X}}, // top children
+            {{1, 27, 13, 16, 7, X}}, //
+            {{2, 28, 9, 17, 20, X}}, //
+            {{3, 29, 9, 8, 7, X}},   //
+            {{X, X, X, X, X, X}},
+            {{X, X, X, X, X, X}},
+          }};
+          return cell_quads_wedge;
+        }
 
           case ReferenceCells::Hexahedron:
             {
@@ -1942,61 +1988,69 @@ ReferenceCell<dim>::new_isotropic_child_cell_vertices(
     {
       constexpr unsigned int X = numbers::invalid_unsigned_int;
 
-      switch (this->kind)
+  switch (this->kind)
+    {
+      case ReferenceCells::Tetrahedron:
         {
-          case ReferenceCells::Tetrahedron:
-            {
-              switch (refinement_choice)
-                {
-                  case 0:
-                    // new line is (6,8)
-                    return {{
-                      {{0, 4, 6, 7, X, X, X, X}},
-                      {{4, 1, 5, 8, X, X, X, X}},
-                      {{6, 5, 2, 9, X, X, X, X}},
-                      {{7, 8, 9, 3, X, X, X, X}},
-                      {{4, 5, 6, 8, X, X, X, X}},
-                      {{4, 7, 8, 6, X, X, X, X}},
-                      {{6, 9, 7, 8, X, X, X, X}},
-                      {{5, 8, 9, 6, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                    }};
-                  case 1:
-                    // new line is (5,7)
-                    return {{
-                      {{0, 4, 6, 7, X, X, X, X}},
-                      {{4, 1, 5, 8, X, X, X, X}},
-                      {{6, 5, 2, 9, X, X, X, X}},
-                      {{7, 8, 9, 3, X, X, X, X}},
-                      {{4, 5, 6, 7, X, X, X, X}},
-                      {{4, 7, 8, 5, X, X, X, X}},
-                      {{6, 9, 7, 5, X, X, X, X}},
-                      {{5, 8, 9, 7, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                    }};
-                  case 2:
-                    // new line is (4,9)
-                    return {{
-                      {{0, 4, 6, 7, X, X, X, X}},
-                      {{4, 1, 5, 8, X, X, X, X}},
-                      {{6, 5, 2, 9, X, X, X, X}},
-                      {{7, 8, 9, 3, X, X, X, X}},
-                      {{4, 5, 6, 9, X, X, X, X}},
-                      {{4, 7, 8, 9, X, X, X, X}},
-                      {{6, 9, 7, 4, X, X, X, X}},
-                      {{5, 8, 9, 4, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                      {{X, X, X, X, X, X, X, X}},
-                    }};
-
-                  default:
-                    DEAL_II_ASSERT_UNREACHABLE();
-                }
-            }
-          case ReferenceCells::Pyramid:
-            DEAL_II_NOT_IMPLEMENTED();
+          constexpr dealii::ndarray<unsigned int, 3, 10, 8> cell_vertices_tet =
+            {{// new line is (6,8)
+              {{
+                {{0, 4, 6, 7, X, X, X, X}},
+                {{4, 1, 5, 8, X, X, X, X}},
+                {{6, 5, 2, 9, X, X, X, X}},
+                {{7, 8, 9, 3, X, X, X, X}},
+                {{4, 5, 6, 8, X, X, X, X}},
+                {{4, 7, 8, 6, X, X, X, X}},
+                {{6, 9, 7, 8, X, X, X, X}},
+                {{5, 8, 9, 6, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+              }},
+              // new line is (5,7)
+              {{
+                {{0, 4, 6, 7, X, X, X, X}},
+                {{4, 1, 5, 8, X, X, X, X}},
+                {{6, 5, 2, 9, X, X, X, X}},
+                {{7, 8, 9, 3, X, X, X, X}},
+                {{4, 5, 6, 7, X, X, X, X}},
+                {{4, 7, 8, 5, X, X, X, X}},
+                {{6, 9, 7, 5, X, X, X, X}},
+                {{5, 8, 9, 7, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+              }},
+              // new line is (4,9)
+              {{
+                {{0, 4, 6, 7, X, X, X, X}},
+                {{4, 1, 5, 8, X, X, X, X}},
+                {{6, 5, 2, 9, X, X, X, X}},
+                {{7, 8, 9, 3, X, X, X, X}},
+                {{4, 5, 6, 9, X, X, X, X}},
+                {{4, 7, 8, 9, X, X, X, X}},
+                {{6, 9, 7, 4, X, X, X, X}},
+                {{5, 8, 9, 4, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+                {{X, X, X, X, X, X, X, X}},
+              }}}};
+          return cell_vertices_tet[refinement_choice];
+        }
+      case ReferenceCells::Pyramid:
+        {
+          constexpr dealii::ndarray<unsigned int, 10, 8> cell_vertices_pyramid =
+            {{
+              {{0, 7, 5, 13, 9, X, X, X}},    // bottom pyramid
+              {{7, 1, 13, 6, 10, X, X, X}},   //
+              {{5, 13, 2, 8, 11, X, X, X}},   //
+              {{13, 6, 8, 3, 12, X, X, X}},   //
+              {{5, 13, 11, 9, X, X, X, X}},   // bottom wedges
+              {{13, 6, 12, 10, X, X, X, X}},  //
+              {{7, 13, 9, 10, X, X, X, X}},   //
+              {{13, 8, 11, 12, X, X, X, X}},  //
+              {{9, 11, 10, 12, 13, X, X, X}}, // upside down pyramid
+              {{9, 10, 11, 12, 4, X, X, X}},  // top pyramid
+            }};
+          return cell_vertices_pyramid;
+        }
 
           case ReferenceCells::Wedge:
             {
@@ -2455,9 +2509,7 @@ ReferenceCell<dim>::n_isotropic_children() const
       case ReferenceCells::Tetrahedron:
         return 8;
       case ReferenceCells::Pyramid:
-        // We haven't yet decided how to refine pyramids. Update this when we
-        // have
-        return 0;
+        return 10;
       case ReferenceCells::Wedge:
         return 8;
       case ReferenceCells::Hexahedron:
@@ -2620,17 +2672,7 @@ ReferenceCell<dim>::refinement_cases() const
       switch (this->kind)
         {
           case ReferenceCells::Tetrahedron:
-            {
-              static constexpr std::array<RefinementCase<3>, 1> possibilities{
-                {RefinementPossibilities<3>::isotropic_refinement}};
-              return make_array_view(possibilities);
-            }
           case ReferenceCells::Pyramid:
-            {
-              // TODO: Pyramid
-              // Pyramids cannot yet be refined
-              return ArrayView<const RefinementCase<3>>();
-            }
           case ReferenceCells::Wedge:
             {
               static constexpr std::array<RefinementCase<3>, 1> possibilities{
@@ -3450,7 +3492,8 @@ namespace ReferenceCells
   inline constexpr unsigned int
   max_n_children()
   {
-    return GeometryInfo<structdim>::max_children_per_cell;
+    // Pyramids (3D) have 10 children.
+    return structdim == 3 ? 10 : GeometryInfo<structdim>::max_children_per_cell;
   }
 } // namespace ReferenceCells
 
