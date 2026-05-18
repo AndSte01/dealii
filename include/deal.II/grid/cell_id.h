@@ -85,7 +85,7 @@ public:
    * next, starting with the coarse cell, until we get to the cell represented
    * by the current object. Therefore, each entry should be a number between 0
    * and the number of children of a cell in the current space dimension (i.e.,
-   * GeometryInfo<dim>::max_children_per_cell).
+   * ReferenceCell<dim>::max_children_per_cell).
    */
   CellId(const types::coarse_cell_id      coarse_cell_id,
          const std::vector<std::uint8_t> &child_indices);
@@ -98,7 +98,7 @@ public:
    * next, starting with the coarse cell, until we get to the cell represented
    * by the current object. Therefore, each entry should be a number between 0
    * and the number of children of a cell in the current space dimension (i.e.,
-   * GeometryInfo<dim>::max_children_per_cell). The array
+   * ReferenceCell<dim>::max_children_per_cell). The array
    * @p child_indices must have at least @p n_child_indices valid entries.
    */
   CellId(const types::coarse_cell_id coarse_cell_id,

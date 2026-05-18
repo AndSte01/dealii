@@ -1502,7 +1502,7 @@ public:
   boost::container::small_vector<
     TriaIterator<
       DoFCellAccessor<dimension_, space_dimension_, level_dof_access>>,
-    GeometryInfo<dimension_>::max_children_per_cell>
+    ReferenceCells::max_n_children<dimension_>()>
   child_iterators() const;
 
   /**
@@ -4487,14 +4487,14 @@ DoFCellAccessor<dimension_, space_dimension_, level_dof_access>::child(
 template <int dimension_, int space_dimension_, bool level_dof_access>
 inline boost::container::small_vector<
   TriaIterator<DoFCellAccessor<dimension_, space_dimension_, level_dof_access>>,
-  GeometryInfo<dimension_>::max_children_per_cell>
+  ReferenceCells::max_n_children<dimension_>()>
 DoFCellAccessor<dimension_, space_dimension_, level_dof_access>::
   child_iterators() const
 {
   boost::container::small_vector<
     TriaIterator<
       DoFCellAccessor<dimension_, space_dimension_, level_dof_access>>,
-    GeometryInfo<dimension_>::max_children_per_cell>
+    ReferenceCells::max_n_children<dimension_>()>
     child_iterators(this->n_children());
 
   for (unsigned int i = 0; i < this->n_children(); ++i)

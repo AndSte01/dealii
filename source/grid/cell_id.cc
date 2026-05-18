@@ -18,6 +18,49 @@
 
 DEAL_II_NAMESPACE_OPEN
 
+namespace
+{
+  /**
+   * Calculate values used in function below. Should be moved to a templated
+   * lambda once C++20 is available.
+   */
+  template <unsigned int dim>
+  constexpr unsigned int
+  calc_children_per_value()
+  {
+    // std::bit_width available only for C++20 and newer
+    return sizeof(CellId::binary_type::value_type) * CHAR_BIT /
+           Kokkos::bit_width(
+             ReferenceCells::max_n_children<dim>() /* bit per child */);
+  }
+
+  /**
+   * Calculate how many children can be stored within each of the binary
+   * elements inside the binary representation. Required number of bits depends
+   * on ReferenceCells:max_n_children<dim>().
+   */
+  static inline unsigned int
+  get_children_per_value(const unsigned int dim)
+  {
+    // Dimension must be between 1 to 3
+    ExcIndexRange(dim, 1, 3 + 1);
+
+    // original implementation that is no longer valid because pyramids produce
+    // 10 children so their index required 4 bit.
+    // Each child requires 'dim' bits to store its index
+    // const unsigned int children_per_value =
+    //   sizeof(binary_type::value_type) * 8 /* bit per byte */ / dim;
+
+    // std::bit_width available only for C++20 and newer
+    constexpr unsigned int children_per_value[] = {
+      calc_children_per_value<1>(), // dim = 1
+      calc_children_per_value<2>(), // dim = 2
+      calc_children_per_value<3>()  // dim = 3
+    };
+
+    return children_per_value[dim - 1];
+  }
+} // namespace
 
 CellId::CellId()
   : coarse_cell_id(numbers::invalid_coarse_cell_id)
@@ -25,7 +68,7 @@ CellId::CellId()
 {
   // initialize the child indices to invalid values
   // (the only allowed values are between zero and
-  // GeometryInfo<dim>::max_children_per_cell)
+  // ReferenceCell<dim>::max_children_per_cell)
   std::fill(child_indices.begin(),
             child_indices.end(),
             std::numeric_limits<char>::max());
@@ -69,10 +112,10 @@ CellId::CellId(const CellId::binary_type &binary_representation)
 
   Assert(n_child_indices < child_indices.size(), ExcInternalError());
 
-  // Each child requires 'dim' bits to store its index
-  const unsigned int children_per_value =
-    sizeof(binary_type::value_type) * 8 / dim;
-  const unsigned int child_mask = (1 << dim) - 1;
+  // Each child requires 'dim' bits to store its index. An exception are 3D
+  // cells which require 4 bits due to pyramids producing 10 children.
+  const unsigned int children_per_value = get_children_per_value(dim);
+  const unsigned int child_mask         = (1 << dim) - 1;
 
   // Loop until all child indices have been read
   unsigned int child_level  = 0;
@@ -121,10 +164,9 @@ CellId::to_binary() const
   binary_representation[1] |= dim;
 
   // Each child requires 'dim' bits to store its index
-  const unsigned int children_per_value =
-    sizeof(binary_type::value_type) * 8 / dim;
-  unsigned int child_level  = 0;
-  unsigned int binary_entry = 2;
+  const unsigned int children_per_value = get_children_per_value(dim);
+  unsigned int       child_level        = 0;
+  unsigned int       binary_entry       = 2;
 
   // Loop until all child indices have been written
   while (child_level < n_child_indices)
