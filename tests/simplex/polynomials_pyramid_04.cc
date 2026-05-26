@@ -803,7 +803,8 @@ test_quadratic()
   std::vector<Point<dim>> points;
   for (const auto &p : support_points)
     points.emplace_back(p);
-  points.erase(points.begin() + 4);
+  points.erase(points.begin() +
+               4); // remove the tip as there is no gradient defined
   // Add some random points
   points.emplace_back(Point<dim>(0.36658, 0.58775, 0.21455));
   points.emplace_back(Point<dim>(-0.64464, 0.3546, 0.3246));
