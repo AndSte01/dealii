@@ -6871,7 +6871,7 @@ namespace internal
                 {{{0, 8, 5, X}},
                  {{1, 2, 6, X}},
                  {{7, 3, 4, X}},
-                 {{6, 7, 8, X}}}};
+                 {{7, 8, 6, X}}}};
 
               // The defined lines in `line_vertices_tri` do not satisfy the
               // expected orientations of all the children's reference cells.
@@ -6882,7 +6882,7 @@ namespace internal
                   {{{{{0, 3}}, {{3, 5}}, {{5, 0}}, {{X, X}}}},
                    {{{{3, 1}}, {{1, 4}}, {{4, 3}}, {{X, X}}}},
                    {{{{5, 4}}, {{4, 2}}, {{2, 5}}, {{X, X}}}},
-                   {{{{3, 4}}, {{4, 5}}, {{5, 3}}, {{X, X}}}}}};
+                   {{{{4, 5}}, {{5, 3}}, {{3, 4}}, {{X, X}}}}}};
 
               // Select lookup table according to reference cell of parent.
               const auto &line_vertices =
@@ -7522,12 +7522,12 @@ namespace internal
                               // the table below relating the lines of the
                               // oriented face to their counterparts on the
                               // reference cell face.
-                              tri_line_perm = {{{{0, 1, 2}}, // 0
-                                                {{1, 0, 2}},
-                                                {{2, 0, 1}}, // 2
+                              tri_line_perm = {{{{2, 0, 1}}, // 0
                                                 {{0, 2, 1}},
-                                                {{1, 2, 0}}, // 4
-                                                {{2, 1, 0}}}};
+                                                {{1, 2, 0}}, // 2
+                                                {{2, 1, 0}},
+                                                {{0, 1, 2}}, // 4
+                                                {{1, 0, 2}}}};
 
                             const auto combined_orientation =
                               cell->combined_face_orientation(f);

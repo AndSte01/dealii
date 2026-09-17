@@ -76,11 +76,14 @@ test(const FiniteElement<dim, spacedim> &fe)
   AffineConstraints<double> dummy;
   dummy.close();
 
+  auto gauss = QGaussSimplex<dim>(fe.tensor_degree() + 1);
+  auto rhs = RightHandSideFunction<dim>(1);
+
   VectorTools::project(mapping,
                        dof_handler,
                        dummy,
-                       QGaussSimplex<dim>(fe.tensor_degree() + 1),
-                       RightHandSideFunction<dim>(1),
+                       gauss,
+                       rhs,
                        solution);
 
 
