@@ -68,9 +68,11 @@ test(const ReferenceCell<dim>  reference_cell,
                   const auto subface = face->child(subface_no);
 
                   for (const unsigned int vertex_no : subface->vertex_indices())
-                    Assert(subface->vertex(vertex_no) ==
-                             subface_vertices[vertex_no],
-                           ExcMessage("should match"));
+                    {
+                      Point<dim> tria_point = subface->vertex(vertex_no);
+                      Assert(tria_point == subface_vertices[vertex_no],
+                             ExcMessage("should match"));
+                    }
                 }
             }
         }
